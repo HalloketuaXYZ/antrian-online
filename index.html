@@ -90,73 +90,77 @@
 </div>
 
 <script>
-    const START_ANTRIAN = 5000; // nomor awal besar
-    const KECEPATAN = 1; // naik 1 nomor per interval
-    const INTERVAL_MS = 60000; // 1 menit naik 1 nomor (TERASA LAMA)
+const START_MIN = 5000;
+const START_MAX = 9000;
+const KECEPATAN = 1;
+const INTERVAL_MS = 60000;
 
-    function initAntrianSekarang() {
-        let sekarang = localStorage.getItem("antrianSekarang");
-        let lastUpdate = localStorage.getItem("lastUpdate");
+function initAntrianSekarang() {
+    let sekarang = localStorage.getItem("antrianSekarang");
+    let lastUpdate = localStorage.getItem("lastUpdate");
 
-        if (!sekarang) {
-            localStorage.setItem("antrianSekarang", 1000);
-            localStorage.setItem("lastUpdate", Date.now());
-            return;
-        }
-
-        // Hitung kenaikan berdasarkan waktu
-        let selisih = Math.floor((Date.now() - lastUpdate) / INTERVAL_MS);
-        if (selisih > 0) {
-            sekarang = parseInt(sekarang) + (selisih * KECEPATAN);
-            localStorage.setItem("antrianSekarang", sekarang);
-            localStorage.setItem("lastUpdate", Date.now());
-        }
+    if (!sekarang) {
+        localStorage.setItem("antrianSekarang", 1000);
+        localStorage.setItem("lastUpdate", Date.now());
+        return;
     }
 
-    function cekAntrian() {
-        const id = document.getElementById("userId").value.trim();
-        if (!id) {
-            alert("ID tidak boleh kosong");
-            return;
-        }
+    let selisih = Math.floor((Date.now() - lastUpdate) / INTERVAL_MS);
+    if (selisih > 0) {
+        sekarang = parseInt(sekarang) + selisih * KECEPATAN;
+        localStorage.setItem("antrianSekarang", sekarang);
+        localStorage.setItem("lastUpdate", Date.now());
+    }
+}
 
-        initAntrianSekarang();
+function generateRandomQueue(usedNumbers) {
+    let nomor;
+    do {
+        nomor = Math.floor(Math.random() * (START_MAX - START_MIN + 1)) + START_MIN;
+    } while (usedNumbers.includes(nomor));
+    return nomor;
+}
 
-        let data = JSON.parse(localStorage.getItem("dataAntrian")) || {};
-        let nomorTerakhir = parseInt(localStorage.getItem("nomorTerakhir")) || START_ANTRIAN - 1;
-        let sekarang = parseInt(localStorage.getItem("antrianSekarang"));
-
-        if (!data[id]) {
-            nomorTerakhir++;
-            data[id] = nomorTerakhir;
-            localStorage.setItem("dataAntrian", JSON.stringify(data));
-            localStorage.setItem("nomorTerakhir", nomorTerakhir);
-        }
-
-        const nomorUser = data[id];
-        const sisa = nomorUser - sekarang;
-
-        document.getElementById("hasil").innerHTML = `
-            <div class="info">
-                <div class="label">ID Anda</div>
-                <div><b>${id}</b></div>
-
-                <div class="label">Nomor Antrian Anda</div>
-                <div class="number">${nomorUser}</div>
-
-                <div class="label">Antrian Sekarang</div>
-                <div class="number">${sekarang}</div>
-
-                <div class="progress">
-                    ${sisa > 0 ? `Masih menunggu ± ${sisa} antrian lagi` : "Giliran Anda!"}
-                </div>
-            </div>
-        `;
+function cekAntrian() {
+    const id = document.getElementById("userId").value.trim();
+    if (!id) {
+        alert("ID tidak boleh kosong");
+        return;
     }
 
     initAntrianSekarang();
+
+    let data = JSON.parse(localStorage.getItem("dataAntrian")) || {};
+    let sekarang = parseInt(localStorage.getItem("antrianSekarang"));
+
+    if (!data[id]) {
+        const usedNumbers = Object.values(data);
+        data[id] = generateRandomQueue(usedNumbers);
+        localStorage.setItem("dataAntrian", JSON.stringify(data));
+    }
+
+    const nomorUser = data[id];
+    const sisa = nomorUser - sekarang;
+
+    document.getElementById("hasil").innerHTML = `
+        <div class="info">
+            <div class="label">ID Anda</div>
+            <b>${id}</b>
+
+            <div class="label">Nomor Antrian Anda</div>
+            <div class="number">${nomorUser}</div>
+
+            <div class="label">Antrian Sekarang</div>
+            <div class="number">${sekarang}</div>
+
+            <div class="progress">
+                ${sisa > 0 ? `Masih menunggu ± ${sisa} antrian lagi` : "Giliran Anda!"}
+            </div>
+        </div>
+    `;
+}
+
+initAntrianSekarang();
 </script>
 
-</body>
-</html>
 
