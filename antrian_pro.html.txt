@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Antrian Online</title>
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #0a3cff, #00b4ff);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+    }
+
+    .card {
+        background: rgba(0,0,0,0.25);
+        padding: 30px;
+        width: 360px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+        text-align: center;
+    }
+
+    h1 {
+        margin-top: 0;
+        font-size: 22px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        background: #00ffd0;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #00e6bb;
+    }
+
+    .info {
+        margin-top: 20px;
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .label {
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .number {
+        font-size: 28px;
+        font-weight: bold;
+        color: #ffd700;
+    }
+
+    .progress {
+        margin-top: 10px;
+        font-size: 15px;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Antrian Online</h1>
+    <p>Masukkan ID Anda</p>
+
+    <input type="text" id="userId" placeholder="Contoh: abcd">
+    <button onclick="cekAntrian()">Cek Antrian</button>
+
+    <div id="hasil"></div>
+</div>
+
+<script>
+    const START_ANTRIAN = 5000; // nomor awal besar
+    const KECEPATAN = 1; // naik 1 nomor per interval
+    const INTERVAL_MS = 60000; // 1 menit naik 1 nomor (TERASA LAMA)
+
+    function initAntrianSekarang() {
+        let sekarang = localStorage.getItem("antrianSekarang");
+        let lastUpdate = localStorage.getItem("lastUpdate");
+
+        if (!sekarang) {
+            localStorage.setItem("antrianSekarang", 1000);
+            localStorage.setItem("lastUpdate", Date.now());
+            return;
+        }
+
+        // Hitung kenaikan berdasarkan waktu
+        let selisih = Math.floor((Date.now() - lastUpdate) / INTERVAL_MS);
+        if (selisih > 0) {
+            sekarang = parseInt(sekarang) + (selisih * KECEPATAN);
+            localStorage.setItem("antrianSekarang", sekarang);
+            localStorage.setItem("lastUpdate", Date.now());
+        }
+    }
+
+    function cekAntrian() {
+        const id = document.getElementById("userId").value.trim();
+        if (!id) {
+            alert("ID tidak boleh kosong");
+            return;
+        }
+
+        initAntrianSekarang();
+
+        let data = JSON.parse(localStorage.getItem("dataAntrian")) || {};
+        let nomorTerakhir = parseInt(localStorage.getItem("nomorTerakhir")) || START_ANTRIAN - 1;
+        let sekarang = parseInt(localStorage.getItem("antrianSekarang"));
+
+        if (!data[id]) {
+            nomorTerakhir++;
+            data[id] = nomorTerakhir;
+            localStorage.setItem("dataAntrian", JSON.stringify(data));
+            localStorage.setItem("nomorTerakhir", nomorTerakhir);
+        }
+
+        const nomorUser = data[id];
+        const sisa = nomorUser - sekarang;
+
+        document.getElementById("hasil").innerHTML = `
+            <div class="info">
+                <div class="label">ID Anda</div>
+                <div><b>${id}</b></div>
+
+                <div class="label">Nomor Antrian Anda</div>
+                <div class="number">${nomorUser}</div>
+
+                <div class="label">Antrian Sekarang</div>
+                <div class="number">${sekarang}</div>
+
+                <div class="progress">
+                    ${sisa > 0 ? `Masih menunggu ± ${sisa} antrian lagi` : "Giliran Anda!"}
+                </div>
+            </div>
+        `;
+    }
+
+    initAntrianSekarang();
+</script>
+
+</body>
+</html>
